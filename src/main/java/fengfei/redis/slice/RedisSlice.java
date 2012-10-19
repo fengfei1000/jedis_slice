@@ -40,6 +40,7 @@ public class RedisSlice {
 		init();
 	}
 
+	@SuppressWarnings("unchecked")
 	private void init() {
 		this.masterPool = new GenericObjectPool<>(new PoolableRedisFactory(
 				master.host, master.port, master.timeout), config);

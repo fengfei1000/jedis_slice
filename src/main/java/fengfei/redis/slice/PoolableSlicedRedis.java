@@ -29,7 +29,7 @@ public class PoolableSlicedRedis {
 
 	private int sliceSize;
 	private Plotter plotter = new HashPlotter();
-	private Balance balance = new HashBalance();
+	private Equalizer equalizer = new HashEqualizer();
 	// private Plotter masterSlaveplotter = new HashPlotter();
 	Map<Long, RedisSlice> poolables = new ConcurrentHashMap<>();
 
@@ -44,18 +44,18 @@ public class PoolableSlicedRedis {
 	 * @param plotter
 	 * @param config
 	 */
-	public PoolableSlicedRedis(String hosts, int timeout, Balance balance,
+	public PoolableSlicedRedis(String hosts, int timeout, Equalizer equalizer,
 			Plotter plotter, GenericObjectPool.Config config) {
 		super();
-		this.balance = balance;
+		this.equalizer = equalizer;
 		this.plotter = plotter;
 		init(hosts, timeout, config);
 	}
 
-	public PoolableSlicedRedis(String hosts, int timeout, Balance balance,
+	public PoolableSlicedRedis(String hosts, int timeout, Equalizer equalizer,
 			GenericObjectPool.Config config) {
 		super();
-		this.balance = balance;
+		this.equalizer = equalizer;
 		init(hosts, timeout, config);
 	}
 
@@ -100,6 +100,8 @@ public class PoolableSlicedRedis {
 
 		}
 		initRedisSlice(masters, allslaves, config);
+		equalizer.mapSlice(poolables);
+
 	}
 
 	private void initRedisSlice(List<RedisSliceInfo> masters,
@@ -199,9 +201,13 @@ public class PoolableSlicedRedis {
 					// argsClass = new Class<?>[] {};
 					key = String.valueOf(random.nextLong()).getBytes();
 				}
-				long index = balance.get(key, sliceSize);
+				RedisSlice redisSlice = equalizer.get(new String(key),
+						sliceSize);
+				if (redisSlice == null) {
+					throw new Exception("can't find slice.");
+				}
 				// System.out.println("index: " + index);
-				RedisSlice redisSlice = poolables.get(index);
+				// RedisSlice redisSlice = poolables.get(index);
 				switch (readWrite) {
 				case ReadWrite:
 					pool = redisSlice.getAny(key);
@@ -216,13 +222,11 @@ public class PoolableSlicedRedis {
 				default:
 					break;
 				}
-				if (readWrite == 0) {
-					pool = redisSlice.getNextSlave(key);
-				} else {
-					pool = redisSlice.getMaster(key);
-				}
 
 				jedis = pool.borrowObject();
+				if (jedis == null) {
+					throw new Exception("can't borrow jedis from pool");
+				}
 				Method origin = Jedis.class.getMethod(method.getName(),
 						argsClass);
 				Object obj = origin.invoke(jedis, args);
