@@ -10,6 +10,8 @@ import fengfei.redis.Plotter;
 import redis.clients.jedis.Jedis;
 
 public class RedisSlice {
+	public final static int StatusNormal = 1;
+	public final static int StatusError = 0;
 
 	protected RedisSliceInfo master;
 	protected ObjectPool<Jedis> masterPool;
@@ -18,6 +20,7 @@ public class RedisSlice {
 	protected int slaveSize;
 	protected Plotter plotter;
 	protected GenericObjectPool.Config config;
+	protected int status = StatusNormal;
 
 	public RedisSlice(RedisSliceInfo master, RedisSliceInfo[] slaves,
 			Plotter plotter, GenericObjectPool.Config config) {
@@ -57,16 +60,7 @@ public class RedisSlice {
 		}
 	}
 
-	public ObjectPool<Jedis> getMaster(String key) {
-		return masterPool;
-	}
 
-	public ObjectPool<Jedis> getNextSlave(String key) {
-		if (slaves == null || slaves.length == 0) {
-			return masterPool;
-		}
-		return slavePools[plotter.get(key.getBytes(), slaveSize)];
-	}
 
 	public ObjectPool<Jedis> getMaster(byte[] key) {
 		return masterPool;
@@ -83,6 +77,11 @@ public class RedisSlice {
 			return masterPool;
 		}
 		return slavePools[plotter.get(key, slaveSize)];
+	}
+
+
+	public int getStatus() {
+		return status;
 	}
 
 	public void close() throws Exception {

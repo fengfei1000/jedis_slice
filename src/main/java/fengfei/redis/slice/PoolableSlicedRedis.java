@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.pool.ObjectPool;
 import org.apache.commons.pool.impl.GenericObjectPool;
@@ -210,6 +209,9 @@ public class PoolableSlicedRedis {
 				jedis = pool.borrowObject();
 				if (jedis == null) {
 					throw new Exception("can't borrow jedis from pool");
+				}
+				if (!jedis.isConnected()) {
+					throw new Exception("redis can't be connected.");
 				}
 				Method origin = Jedis.class.getMethod(method.getName(),
 						argsClass);
