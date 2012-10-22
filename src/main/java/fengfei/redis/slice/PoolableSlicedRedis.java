@@ -17,8 +17,38 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import redis.clients.jedis.Jedis;
+import fengfei.redis.Equalizer;
 import fengfei.redis.RedisComand;
 
+/**
+ * <pre>
+ * example 1:
+ * 		PoolableSlicedRedis redis = new PoolableSlicedRedis(
+ * 				"192.168.1.3:6379,192.168.1.4:6379,192.168.1.5:6379 192.168.1.6:6379,192.168.1.7:6379,192.168.1.8:6379", 60000, new HashEqualizer(),
+ * 				config);
+ * 		RedisComand rc = redis.createRedisCommand();
+ * 	    rc.set("key", "value");
+ * 		redis.close();
+ * 
+ * * example 2: 
+ * 		Equalizer equalizer = new HashEqualizer();
+ * 		equalizer.setTimeout(60);
+ * 		equalizer.setPoolConfig(config);
+ * 		equalizer.setPlotter(new LoopPlotter());
+ * 		//slice 0: master:192.168.1.3:6379 slave:192.168.1.4:6379 192.168.1.5:6379
+ * 		equalizer.addSlice(0, "192.168.1.3:6379", "192.168.1.4:6379",
+ * 				"192.168.1.5:6379");
+ * 		//slice 1: master:192.168.1.6:6379 slave:192.168.1.7:6379 192.168.1.8:6379
+ * 		equalizer.addSlice(0, "192.168.1.6:6379", "192.168.1.7:6379",
+ * 				"192.168.1.8:6379");
+ * 
+ * 		PoolableSlicedRedis redis = new PoolableSlicedRedis(equalizer);
+ * 		RedisComand rc = redis.createRedisCommand();
+ * </pre>
+ * 
+ * @author
+ * 
+ */
 public class PoolableSlicedRedis {
 	final static int ReadWrite = 0;
 	final static int ReadOnly = 2;
@@ -27,11 +57,11 @@ public class PoolableSlicedRedis {
 	private static Logger logger = LoggerFactory
 			.getLogger(PoolableSlicedRedis.class);
 
-	private int sliceSize;
-	private Plotter plotter = new HashPlotter();
 	private Equalizer equalizer = new HashEqualizer();
-	// private Plotter masterSlaveplotter = new HashPlotter();
-	Map<Long, RedisSlice> poolables = new ConcurrentHashMap<>();
+
+	public PoolableSlicedRedis(Equalizer equalizer) {
+		this.equalizer = equalizer;
+	}
 
 	/**
 	 * <pre>
@@ -45,24 +75,10 @@ public class PoolableSlicedRedis {
 	 * @param config
 	 */
 	public PoolableSlicedRedis(String hosts, int timeout, Equalizer equalizer,
-			Plotter plotter, GenericObjectPool.Config config) {
-		super();
-		this.equalizer = equalizer;
-		this.plotter = plotter;
-		init(hosts, timeout, config);
-	}
-
-	public PoolableSlicedRedis(String hosts, int timeout, Equalizer equalizer,
 			GenericObjectPool.Config config) {
 		super();
 		this.equalizer = equalizer;
-		init(hosts, timeout, config);
-	}
 
-	public PoolableSlicedRedis(String hosts, int timeout, Plotter plotter,
-			GenericObjectPool.Config config) {
-		super();
-		this.plotter = plotter;
 		init(hosts, timeout, config);
 	}
 
@@ -80,57 +96,25 @@ public class PoolableSlicedRedis {
 	}
 
 	private void init(String hosts, int timeout, GenericObjectPool.Config config) {
-		List<RedisSliceInfo> masters = new ArrayList<>();
-		List<List<RedisSliceInfo>> allslaves = new ArrayList<>();
 		String[] allhosts = hosts.split(" ");
-		this.sliceSize = allhosts.length;
-		for (String mshosts : allhosts) {
+
+		for (int j = 0; j < allhosts.length; j++) {
+			String mshosts = allhosts[j];
 			String sliceHosts[] = mshosts.split(",");
-			RedisSliceInfo master = toRedisSliceInfo(sliceHosts[0], timeout);
-			masters.add(master);
+			String masterHost = sliceHosts[0];
+			String slaveHosts[] = null;
 			if (sliceHosts.length > 1) {
-				List<RedisSliceInfo> sliceSlaves = new ArrayList<>();
+				slaveHosts = new String[sliceHosts.length - 1];
+				List<String> sliceSlaves = new ArrayList<>();
 				for (int i = 1; i < sliceHosts.length; i++) {
-					RedisSliceInfo slave = toRedisSliceInfo(sliceHosts[i],
-							timeout);
-					sliceSlaves.add(slave);
+					sliceSlaves.add(sliceHosts[i]);
 				}
-				allslaves.add(sliceSlaves);
+				slaveHosts = sliceSlaves.toArray(slaveHosts);
 			}
-
-		}
-		initRedisSlice(masters, allslaves, config);
-		equalizer.mapSlice(poolables);
-
-	}
-
-	private void initRedisSlice(List<RedisSliceInfo> masters,
-			List<List<RedisSliceInfo>> allslaves,
-			GenericObjectPool.Config config) {
-		for (int i = 0; i < masters.size(); i++) {
-			RedisSliceInfo master = masters.get(i);
-			if (allslaves != null && allslaves.size() > 0) {
-				List<RedisSliceInfo> slaves = allslaves.get(i);
-
-				RedisSlice redisSlice = new RedisSlice(master, slaves, plotter,
-						config);
-				poolables.put(Long.valueOf(i), redisSlice);
-			} else {
-
-				RedisSlice redisSlice = new RedisSlice(master,
-						new RedisSliceInfo[] {}, plotter, config);
-				poolables.put(Long.valueOf(i), redisSlice);
-			}
+			equalizer.addSlice(new Long(j), masterHost, slaveHosts);
 
 		}
 
-	}
-
-	private RedisSliceInfo toRedisSliceInfo(String host, int timeout) {
-		String[] hp = host.split(":");
-		String h = hp[0];
-		int p = Integer.parseInt(hp[1]);
-		return new RedisSliceInfo(h, p, timeout);
 	}
 
 	public RedisComand createRedisCommand() {
@@ -149,6 +133,7 @@ public class PoolableSlicedRedis {
 	}
 
 	public void close() {
+		Map<Long, RedisSlice> poolables = equalizer.getSliceMap();
 		Set<Entry<Long, RedisSlice>> pools = poolables.entrySet();
 		for (Entry<Long, RedisSlice> entry : pools) {
 			RedisSlice rs = entry.getValue();
@@ -201,8 +186,7 @@ public class PoolableSlicedRedis {
 					// argsClass = new Class<?>[] {};
 					key = String.valueOf(random.nextLong()).getBytes();
 				}
-				RedisSlice redisSlice = equalizer.get(new String(key),
-						sliceSize);
+				RedisSlice redisSlice = equalizer.get(new String(key));
 				if (redisSlice == null) {
 					throw new Exception("can't find slice.");
 				}

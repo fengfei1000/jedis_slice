@@ -5,6 +5,8 @@ import java.util.List;
 import org.apache.commons.pool.ObjectPool;
 import org.apache.commons.pool.impl.GenericObjectPool;
 
+import fengfei.redis.Plotter;
+
 import redis.clients.jedis.Jedis;
 
 public class RedisSlice {
@@ -63,7 +65,7 @@ public class RedisSlice {
 		if (slaves == null || slaves.length == 0) {
 			return masterPool;
 		}
-		return slavePools[plotter.get(key, slaveSize)];
+		return slavePools[plotter.get(key.getBytes(), slaveSize)];
 	}
 
 	public ObjectPool<Jedis> getMaster(byte[] key) {

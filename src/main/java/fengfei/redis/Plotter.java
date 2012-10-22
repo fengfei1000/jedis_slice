@@ -1,8 +1,7 @@
-package fengfei.redis.slice;
+package fengfei.redis;
 
 public interface Plotter {
 
-	int get(String key, int size);
 
 	int get(byte[] key, int size);
 

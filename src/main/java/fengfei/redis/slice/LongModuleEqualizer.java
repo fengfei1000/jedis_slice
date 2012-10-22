@@ -3,17 +3,32 @@ package fengfei.redis.slice;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.commons.pool.impl.GenericObjectPool.Config;
+
+import fengfei.redis.Equalizer;
+import fengfei.redis.Plotter;
+
 /**
  * key-> long % size->slice
  * 
  * 
  */
-public class LongModuleEqualizer implements Equalizer {
+public class LongModuleEqualizer extends AbstractEqualizer implements Equalizer {
 
-	Map<Long, RedisSlice> sliceMap;
+	Map<Long, RedisSlice> sliceMap = new ConcurrentHashMap<>();
+
+	public LongModuleEqualizer() {
+	}
+
+	public LongModuleEqualizer(int timeout, Config config, Plotter plotter,
+			Map<Long, RedisSlice> sliceMap) {
+		super(timeout, config, plotter);
+		this.sliceMap = sliceMap;
+	}
 
 	@Override
-	public RedisSlice get(String key, int size) {
+	public RedisSlice get(String key) {
+		int size = getSliceMap().size();
 		long mod = Long.parseLong(key);
 		long sk = Math.abs(mod % size);
 		return sliceMap.get(sk);
@@ -22,6 +37,10 @@ public class LongModuleEqualizer implements Equalizer {
 	@Override
 	public void mapSlice(Map<Long, RedisSlice> redisSliceMap) {
 		sliceMap = new ConcurrentHashMap<>(redisSliceMap);
+	}
 
+	@Override
+	public Map<Long, RedisSlice> getSliceMap() {
+		return sliceMap;
 	}
 }
