@@ -1,5 +1,7 @@
 package fengfei.redis.slice;
 
+import java.rmi.ConnectException;
+
 import org.apache.commons.pool.PoolableObjectFactory;
 
 import redis.clients.jedis.Jedis;
@@ -27,11 +29,17 @@ public class PoolableRedisFactory implements PoolableObjectFactory<Jedis> {
 	}
 
 	public Jedis makeObject() throws Exception {
-		final Jedis jedis = new Jedis(this.host, this.port, this.timeout);
+		Jedis jedis;
+		try {
+			jedis = new Jedis(this.host, this.port, this.timeout);
 
-		jedis.connect();
-		if (null != this.password) {
-			jedis.auth(this.password);
+			jedis.connect();
+			if (null != this.password) {
+				jedis.auth(this.password);
+			}
+		} catch (Exception e) {
+			throw new ConnectException("Can't connect host:" + host + ":"
+					+ port, e);
 		}
 
 		return jedis;

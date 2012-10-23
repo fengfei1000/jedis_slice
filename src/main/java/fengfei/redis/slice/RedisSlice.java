@@ -48,19 +48,17 @@ public class RedisSlice {
 	@SuppressWarnings("unchecked")
 	private void init() {
 		this.masterPool = new GenericObjectPool<>(new PoolableRedisFactory(
-				master.host, master.port, master.timeout), config);
+				master.host, master.port, master.timeout * 1000), config);
 		if (slaves != null && slaves.length > 0) {
 			slavePools = new GenericObjectPool[slaves.length];
 			for (int i = 0; i < slaves.length; i++) {
 				RedisSliceInfo slave = slaves[i];
 				slavePools[i] = new GenericObjectPool<>(
 						new PoolableRedisFactory(slave.host, slave.port,
-								slave.timeout), config);
+								slave.timeout * 1000), config);
 			}
 		}
 	}
-
-
 
 	public ObjectPool<Jedis> getMaster(byte[] key) {
 		return masterPool;
@@ -78,7 +76,6 @@ public class RedisSlice {
 		}
 		return slavePools[plotter.get(key, slaveSize)];
 	}
-
 
 	public int getStatus() {
 		return status;

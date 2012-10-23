@@ -22,8 +22,9 @@ public class Example1 {
 		config.maxWait = 60000;
 		config.testOnBorrow = true;
 		config.whenExhaustedAction = GenericObjectPool.WHEN_EXHAUSTED_FAIL;
-		example1(config);
-		example2(config);
+		// example1(config);
+		// example2(config);
+		example3(config);
 
 	}
 
@@ -51,16 +52,17 @@ public class Example1 {
 	}
 
 	public static void example3(GenericObjectPool.Config config) {
-		Equalizer equalizer = new HashEqualizer();
+//		Equalizer equalizer = new HashEqualizer();
+		Equalizer equalizer = new LongModuleEqualizer();
 		equalizer.setTimeout(60);
 		equalizer.setPoolConfig(config);
 		equalizer.setPlotter(new LoopPlotter());
-		//slice 0: master:192.168.1.3:6379 slave:192.168.1.4:6379 192.168.1.5:6379
-		equalizer.addSlice(0, "192.168.1.3:6379", "192.168.1.4:6379",
-				"192.168.1.5:6379");
-		//slice 1: master:192.168.1.6:6379 slave:192.168.1.7:6379 192.168.1.8:6379
-		equalizer.addSlice(0, "192.168.1.6:6379", "192.168.1.7:6379",
-				"192.168.1.8:6379");
+		// slice 0: master:192.168.1.3:6379 slave:192.168.1.4:6379
+		// 192.168.1.5:6379
+		equalizer.addSlice(0, "192.168.1.3:6379");
+		// slice 1: master:192.168.1.6:6379 slave:192.168.1.7:6379
+		// 192.168.1.8:6379
+		equalizer.addSlice(1, "192.168.1.2:6379");
 
 		PoolableSlicedRedis redis = new PoolableSlicedRedis(equalizer);
 		RedisComand rc = redis.createRedisCommand();
@@ -69,4 +71,6 @@ public class Example1 {
 		}
 		redis.close();
 	}
+
+	 
 }
