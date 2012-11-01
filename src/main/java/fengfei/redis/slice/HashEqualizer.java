@@ -5,9 +5,10 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.pool.impl.GenericObjectPool.Config;
 
+import redis.clients.util.Hashing;
+
 import fengfei.redis.Equalizer;
 import fengfei.redis.Plotter;
-import fengfei.redis.utils.Hashed;
 
 /**
  * key -> hash % size->slice
@@ -16,7 +17,7 @@ import fengfei.redis.utils.Hashed;
  */
 public class HashEqualizer extends AbstractEqualizer implements Equalizer {
 
-	protected Hashed hashed = Hashed.MD5;
+	protected Hashing hashed = Hashing.MD5;
 	protected Map<Long, Slice> sliceMap = new ConcurrentHashMap<>();
 
 	public HashEqualizer() {
@@ -30,7 +31,7 @@ public class HashEqualizer extends AbstractEqualizer implements Equalizer {
 	@Override
 	public Slice get(String key) {
 		int size=getSliceMap().size();
-		long sk = Math.abs(hashed.hash32(key) % size);
+		long sk = Math.abs(hashed.hash(key) % size);
 		return sliceMap.get(sk);
 	}
 
