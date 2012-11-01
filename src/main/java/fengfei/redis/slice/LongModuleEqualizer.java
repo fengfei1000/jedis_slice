@@ -15,19 +15,19 @@ import fengfei.redis.Plotter;
  */
 public class LongModuleEqualizer extends AbstractEqualizer implements Equalizer {
 
-	Map<Long, RedisSlice> sliceMap = new ConcurrentHashMap<>();
+	Map<Long, Slice> sliceMap = new ConcurrentHashMap<>();
 
 	public LongModuleEqualizer() {
 	}
 
 	public LongModuleEqualizer(int timeout, Config config, Plotter plotter,
-			Map<Long, RedisSlice> sliceMap) {
+			Map<Long, Slice> sliceMap) {
 		super(timeout, config, plotter);
 		this.sliceMap = sliceMap;
 	}
 
 	@Override
-	public RedisSlice get(String key) {
+	public Slice get(String key) {
 		int size = getSliceMap().size();
 		long mod = Long.parseLong(key);
 		long sk = Math.abs(mod % size);
@@ -35,12 +35,12 @@ public class LongModuleEqualizer extends AbstractEqualizer implements Equalizer 
 	}
 
 	@Override
-	public void mapSlice(Map<Long, RedisSlice> redisSliceMap) {
+	public void mapSlice(Map<Long, Slice> redisSliceMap) {
 		sliceMap = new ConcurrentHashMap<>(redisSliceMap);
 	}
 
 	@Override
-	public Map<Long, RedisSlice> getSliceMap() {
+	public Map<Long, Slice> getSliceMap() {
 		return sliceMap;
 	}
 }

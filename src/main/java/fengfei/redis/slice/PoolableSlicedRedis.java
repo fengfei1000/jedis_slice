@@ -132,10 +132,10 @@ public class PoolableSlicedRedis {
 	}
 
 	public void close() {
-		Map<Long, RedisSlice> poolables = equalizer.getSliceMap();
-		Set<Entry<Long, RedisSlice>> pools = poolables.entrySet();
-		for (Entry<Long, RedisSlice> entry : pools) {
-			RedisSlice rs = entry.getValue();
+		Map<Long, Slice> poolables = equalizer.getSliceMap();
+		Set<Entry<Long, Slice>> pools = poolables.entrySet();
+		for (Entry<Long, Slice> entry : pools) {
+			Slice rs = entry.getValue();
 			try {
 				rs.close();
 			} catch (Exception e) {
@@ -185,7 +185,7 @@ public class PoolableSlicedRedis {
 					// argsClass = new Class<?>[] {};
 					key = String.valueOf(random.nextLong()).getBytes();
 				}
-				RedisSlice redisSlice = equalizer.get(new String(key));
+				Slice redisSlice = equalizer.get(new String(key));
 				if (redisSlice == null) {
 					throw new Exception("can't find slice.");
 				}

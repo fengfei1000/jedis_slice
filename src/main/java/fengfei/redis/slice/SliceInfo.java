@@ -1,14 +1,14 @@
 package fengfei.redis.slice;
 
 
-public class RedisSliceInfo {
+public class SliceInfo {
 
 	protected final String host;
 	protected final int port;
 	protected final int timeout;
 	protected boolean isMaster = true;
 
-	public RedisSliceInfo(String host, int port, int timeout) {
+	public SliceInfo(String host, int port, int timeout) {
 		super();
 		this.host = host;
 		this.port = port;
@@ -16,7 +16,7 @@ public class RedisSliceInfo {
 
 	}
 
-	public RedisSliceInfo(String host, int port, int timeout, boolean isMaster) {
+	public SliceInfo(String host, int port, int timeout, boolean isMaster) {
 		this(host, port, timeout);
 		this.isMaster = isMaster;
 	}

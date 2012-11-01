@@ -4,7 +4,7 @@ import java.util.Map;
 
 import org.apache.commons.pool.impl.GenericObjectPool;
 
-import fengfei.redis.slice.RedisSlice;
+import fengfei.redis.slice.Slice;
 
 public interface Equalizer {
 	/**
@@ -14,14 +14,14 @@ public interface Equalizer {
 	 *            slice size
 	 * @return
 	 */
-	RedisSlice get(String key);
+	Slice get(String key);
 
 	/**
 	 * add ext-map
 	 * 
 	 * @param redisSliceMap
 	 */
-	void mapSlice(Map<Long, RedisSlice> redisSliceMap);
+	void mapSlice(Map<Long, Slice> redisSliceMap);
 
 	/**
 	 * add slice
@@ -70,5 +70,5 @@ public interface Equalizer {
 	 */
 	void setPlotter(Plotter plotter);
 
-	Map<Long, RedisSlice> getSliceMap();
+	Map<Long, Slice> getSliceMap();
 }

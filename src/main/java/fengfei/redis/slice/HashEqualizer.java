@@ -17,7 +17,7 @@ import fengfei.redis.utils.Hashed;
 public class HashEqualizer extends AbstractEqualizer implements Equalizer {
 
 	protected Hashed hashed = Hashed.MD5;
-	protected Map<Long, RedisSlice> sliceMap = new ConcurrentHashMap<>();
+	protected Map<Long, Slice> sliceMap = new ConcurrentHashMap<>();
 
 	public HashEqualizer() {
 
@@ -28,19 +28,19 @@ public class HashEqualizer extends AbstractEqualizer implements Equalizer {
 	}
 
 	@Override
-	public RedisSlice get(String key) {
+	public Slice get(String key) {
 		int size=getSliceMap().size();
 		long sk = Math.abs(hashed.hash32(key) % size);
 		return sliceMap.get(sk);
 	}
 
 	@Override
-	public void mapSlice(Map<Long, RedisSlice> redisSliceMap) {
+	public void mapSlice(Map<Long, Slice> redisSliceMap) {
 		sliceMap = new ConcurrentHashMap<>(redisSliceMap);
 	}
 
 	@Override
-	public Map<Long, RedisSlice> getSliceMap() {
+	public Map<Long, Slice> getSliceMap() {
 		return sliceMap;
 	}
 }

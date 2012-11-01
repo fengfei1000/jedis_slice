@@ -40,20 +40,20 @@ public abstract class AbstractEqualizer implements Equalizer {
 	@Override
 	public void addSlice(long id, String masterHost, String... slaveHosts) {
 		String mhp[] = masterHost.split(":");
-		RedisSliceInfo master = new RedisSliceInfo(mhp[0],
+		SliceInfo master = new SliceInfo(mhp[0],
 				Integer.parseInt(mhp[1]), timeout);
-		List<RedisSliceInfo> slaves = new ArrayList<>();
+		List<SliceInfo> slaves = new ArrayList<>();
 		if (slaveHosts != null && slaveHosts.length > 0) {
 
 			for (String shost : slaveHosts) {
 				String shp[] = shost.split(":");
-				RedisSliceInfo slave = new RedisSliceInfo(shp[0],
+				SliceInfo slave = new SliceInfo(shp[0],
 						Integer.parseInt(shp[1]), timeout);
 				slaves.add(slave);
 			}
 
 		}
-		RedisSlice redisSlice = new RedisSlice(master, slaves, plotter, config);
+		Slice redisSlice = new Slice(master, slaves, plotter, config);
 		getSliceMap().put(id, redisSlice);
 
 	}

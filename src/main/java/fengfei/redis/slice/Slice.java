@@ -9,20 +9,20 @@ import fengfei.redis.Plotter;
 
 import redis.clients.jedis.Jedis;
 
-public class RedisSlice {
+public class Slice {
 	public final static int StatusNormal = 1;
 	public final static int StatusError = 0;
 
-	protected RedisSliceInfo master;
+	protected SliceInfo master;
 	protected ObjectPool<Jedis> masterPool;
-	protected RedisSliceInfo[] slaves;
+	protected SliceInfo[] slaves;
 	protected ObjectPool<Jedis>[] slavePools;
 	protected int slaveSize;
 	protected Plotter plotter;
 	protected GenericObjectPool.Config config;
 	protected int status = StatusNormal;
 
-	public RedisSlice(RedisSliceInfo master, RedisSliceInfo[] slaves,
+	public Slice(SliceInfo master, SliceInfo[] slaves,
 			Plotter plotter, GenericObjectPool.Config config) {
 		super();
 		this.master = master;
@@ -33,12 +33,12 @@ public class RedisSlice {
 		init();
 	}
 
-	public RedisSlice(RedisSliceInfo master, List<RedisSliceInfo> slaves,
+	public Slice(SliceInfo master, List<SliceInfo> slaves,
 			Plotter plotter, GenericObjectPool.Config config) {
 		super();
 		this.master = master;
 		this.slaves = slaves == null ? null : (slaves
-				.toArray(new RedisSliceInfo[slaves.size()]));
+				.toArray(new SliceInfo[slaves.size()]));
 		this.slaveSize = slaves == null ? 0 : this.slaves.length;
 		this.plotter = plotter;
 		this.config = config;
@@ -52,7 +52,7 @@ public class RedisSlice {
 		if (slaves != null && slaves.length > 0) {
 			slavePools = new GenericObjectPool[slaves.length];
 			for (int i = 0; i < slaves.length; i++) {
-				RedisSliceInfo slave = slaves[i];
+				SliceInfo slave = slaves[i];
 				slavePools[i] = new GenericObjectPool<>(
 						new PoolableRedisFactory(slave.host, slave.port,
 								slave.timeout * 1000), config);
